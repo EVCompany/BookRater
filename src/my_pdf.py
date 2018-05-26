@@ -1,3 +1,4 @@
 import pdfminer
 
-class MyPdf(PDFDo)
+# class MyPdf:
+#     pass
