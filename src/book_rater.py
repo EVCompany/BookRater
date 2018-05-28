@@ -19,7 +19,7 @@ def main():
     print_metrics(pdf)
     pdf.close_file()
     end = time.time()
-    print(print("Время обработки --- %s секунд ---" % (end - start)))
+    print("Время обработки --- %s секунд ---" % (end - start))
     
 if __name__ == '__main__':
     main()
