@@ -1,5 +1,5 @@
 from io import StringIO
-from pdfminer.converter import TextConverter
+from pdfminer.converter import TextConverter, PDFPageAggregator
 from pdfminer.layout import LAParams
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
@@ -9,6 +9,8 @@ from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.pdfdevice import PDFDevice
+from pdfminer.layout import LTImage, LTCurve, LTFigure, LTRect
+
 
 class PdfConsoleInterface:
 
@@ -42,7 +44,18 @@ class PdfConsoleInterface:
         return j
 
     def get_number_of_pictures(self):
-        pass
+        rsrcmgr = PDFResourceManager()
+        laparams = LAParams()
+        device = PDFPageAggregator(rsrcmgr, laparams=laparams)
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+        i = 0
+        for page in PDFPage.get_pages(self.file):
+            interpreter.process_page(page)
+            layout = device.get_result()
+            for element in layout:
+                if isinstance(element, LTFigure):
+                    i += 1
+        return i
 
     def get_number_of_chapters(self):
         a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), self.get_text())))
@@ -62,7 +75,6 @@ class PdfConsoleInterface:
         output.close()
 
         return text
-
 
     def _check_opened_file(self):
         return self.file is not None
