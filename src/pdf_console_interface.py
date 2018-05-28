@@ -3,6 +3,7 @@ from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
+import re
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
@@ -31,12 +32,12 @@ class PdfConsoleInterface:
         pass
 
     def close_file(self):
-        print("FILE_CLOSED")
+        print("FILE CLOSED")
         pass
 
     def get_number_of_pages(self):
         j = 0
-        for i in self.document.get_pages():
+        for i in PDFPage.get_pages(self.file):
             j += 1
         return j
 
@@ -44,7 +45,8 @@ class PdfConsoleInterface:
         pass
 
     def get_number_of_chapters(self):
-        pass
+        a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), self.get_text())))
+        return len(a)
 
     def get_text(self):
         output = StringIO()
@@ -64,3 +66,6 @@ class PdfConsoleInterface:
 
     def _check_opened_file(self):
         return self.file is not None
+
+    def _get_charpter_regex(self):
+        return r'Глава||ГЛАВА'
