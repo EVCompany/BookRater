@@ -76,6 +76,12 @@ class PdfConsoleInterface:
 
         return text
 
+    def print_metrics(self):
+        print("Количество страниц : " + str(self.get_number_of_pages()) + "\n" +
+              "Количество изображений : " + str(self.get_number_of_pictures()) + "\n" +
+              "Количество глав : " + str(self.get_number_of_chapters()))
+
+
 
     def _check_opened_file(self):
         return self.file is not None
