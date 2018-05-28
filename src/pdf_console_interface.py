@@ -3,6 +3,7 @@ from pdfminer.converter import TextConverter, PDFPageAggregator
 from pdfminer.layout import LAParams
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
+import re
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
@@ -33,18 +34,16 @@ class PdfConsoleInterface:
         pass
 
     def close_file(self):
-        print("FILE_CLOSED")
+        print("FILE CLOSED")
         pass
 
     def get_number_of_pages(self):
         j = 0
-
         for i in PDFPage.get_pages(self.file):
             j += 1
         return j
 
     def get_number_of_pictures(self):
-
         rsrcmgr = PDFResourceManager()
         laparams = LAParams()
         device = PDFPageAggregator(rsrcmgr, laparams=laparams)
@@ -59,7 +58,8 @@ class PdfConsoleInterface:
         return i
 
     def get_number_of_chapters(self):
-        pass
+        a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), self.get_text())))
+        return len(a)
 
     def get_text(self):
         output = StringIO()
@@ -76,12 +76,8 @@ class PdfConsoleInterface:
 
         return text
 
-    def print_metrics(self):
-        print("Количество страниц : " + str(self.get_number_of_pages()) + "\n" +
-              "Количество изображений : " + str(self.get_number_of_pictures()) + "\n" +
-              "Количество глав : " + str(self.get_number_of_chapters()))
-
-
-
     def _check_opened_file(self):
         return self.file is not None
+
+    def _get_charpter_regex(self):
+        return r'Глава||ГЛАВА'
