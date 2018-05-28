@@ -1,3 +1,6 @@
+from io import StringIO
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
@@ -42,6 +45,22 @@ class PdfConsoleInterface:
 
     def get_number_of_chapters(self):
         pass
+
+    def get_text(self):
+        output = StringIO()
+        manager = PDFResourceManager()
+        converter = TextConverter(manager, output, laparams=LAParams())
+        interpreter = PDFPageInterpreter(manager, converter)
+
+        for page in PDFPage.get_pages(self.file):
+            interpreter.process_page(page)
+
+        converter.close()
+        text = output.getvalue()
+        output.close()
+
+        return text
+
 
     def _check_opened_file(self):
         return self.file is not None
