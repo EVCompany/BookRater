@@ -5,11 +5,11 @@ from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 import re
 from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.pdfdevice import PDFDevice
-from pdfminer.layout import LTImage, LTCurve, LTFigure, LTRect
+from pdfminer.layout import LTFigure
+from multiprocessing import Process, Pool
 
 
 class PdfConsoleInterface:
@@ -25,23 +25,23 @@ class PdfConsoleInterface:
 
     def __init__(self):
         self.file = None
+        self.number_of_chapters = 0
+        self.number_of_pages = 0
+        self.number_of_pictures = 0
         self.document = None
 
     def load_file(self, path):
         self.file = open(path, 'rb')
         parser = PDFParser(self.file)
         self.document = PDFDocument(parser)
-        pass
 
     def close_file(self):
         print("FILE CLOSED")
         pass
 
     def get_number_of_pages(self):
-        j = 0
         for i in PDFPage.get_pages(self.file):
-            j += 1
-        return j
+            self.number_of_pages += 1
 
     def get_number_of_pictures(self):
         rsrcmgr = PDFResourceManager()
@@ -55,11 +55,11 @@ class PdfConsoleInterface:
             for element in layout:
                 if isinstance(element, LTFigure):
                     i += 1
-        return i
+                    self.number_of_pictures += 1
 
     def get_number_of_chapters(self):
         a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), self.get_text())))
-        return len(a)
+        self.number_of_chapters = len(a)
 
     def get_text(self):
         output = StringIO()
@@ -78,6 +78,21 @@ class PdfConsoleInterface:
 
     def _check_opened_file(self):
         return self.file is not None
+
+    def _get_metrics(self):
+        t1 = Process(target=self.get_number_of_chapters())
+        t1.start()
+        t2 = Process(target=self.get_number_of_pictures())
+        t2.start()
+        t3 = Process(target=self.get_number_of_pages())
+        t3.start()
+        t1.join()
+        t2.join()
+        t3.join()
+
+    def get_metrics(self):
+        self._get_metrics()
+        return (self.number_of_pages, self.number_of_pictures, self.number_of_chapters)
 
     def _get_charpter_regex(self):
         return r'Глава||ГЛАВА'
