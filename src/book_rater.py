@@ -15,7 +15,7 @@ def print_metrics(pdf):
 def main():
     start = time.time()
     pdf = pi.PdfConsoleInterface()
-    pdf.load_file("/Users/vetas/example.pdf")
+    pdf.load_file("/Users/egor/Documents/prog/python/practice/FIRST_PROG_ALG.pdf")
     print_metrics(pdf)
     pdf.close_file()
     end = time.time()

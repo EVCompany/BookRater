@@ -95,4 +95,4 @@ class PdfConsoleInterface:
         return (self.number_of_pages, self.number_of_pictures, self.number_of_chapters)
 
     def _get_charpter_regex(self):
-        return r'Глава||ГЛАВА'
+        return r'ГЛАВА||Глава'
