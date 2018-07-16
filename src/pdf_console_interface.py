@@ -31,9 +31,11 @@ class PdfConsoleInterface:
         self.document = None
         self.year = 0
         self.count_of_literature = 0
+        self.PERFECT_COUNT_OF_CHAPTERS = 5
 
     def load_file(self, path):
         self.file = open(path, 'rb')
+        self._get_pages()
         parser = PDFParser(self.file)
         self.document = PDFDocument(parser)
 
@@ -41,8 +43,13 @@ class PdfConsoleInterface:
         print("FILE CLOSED")
         pass
 
+    def _get_pages(self):
+        self.pages = []
+        for page in PDFPage.get_pages(self.file):
+            self.pages.append(page)
+
     def get_number_of_pages(self):
-        for i in PDFPage.get_pages(self.file):
+        for i in self.pages:
             self.number_of_pages += 1
 
     def get_number_of_pictures(self):
@@ -51,7 +58,7 @@ class PdfConsoleInterface:
         device = PDFPageAggregator(rsrcmgr, laparams=laparams)
         interpreter = PDFPageInterpreter(rsrcmgr, device)
         i = 0
-        for page in PDFPage.get_pages(self.file):
+        for page in self.pages:
             interpreter.process_page(page)
             layout = device.get_result()
             for element in layout:
@@ -60,13 +67,31 @@ class PdfConsoleInterface:
                     self.number_of_pictures += 1
 
     def get_number_of_chapters(self):
-        a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), self.get_text())))
-        print(a)
-        self.number_of_chapters = len(a) // 2
+        chapters_start_pages = []
+        output = StringIO()
+        manager = PDFResourceManager()
+        converter = TextConverter(manager, output, laparams=LAParams())
+        interpreter = PDFPageInterpreter(manager,converter)
+        num = 0
+        for page in self.pages:
+            num += 1
+            interpreter.process_page(page)
+            page_text = output.getvalue()
+            a = list(filter(lambda x: len(x) > 0, re.findall(self._get_charpter_regex(), page_text)))
+            if len(a) > 0:
+                for i in a:
+                    #print("Текст страницы \n" + str(page_text) + "\n" + "Номер страницы: " + str(num))
+                    chapters_start_pages.append(num)
+            output.truncate(0)
+        chapters_start_pages = chapters_start_pages[(len(chapters_start_pages) // 2):]
+        self.number_of_chapters = len(chapters_start_pages)
+        #print("тот самый принт: ")
+        #print(chapters_start_pages)
+
 
     def get_literature(self):
         a = list(filter(lambda x: len(x) > 0, re.findall(self._get_literature_regex(), self.get_text())))[-1]
-        print(a)
+        #print(a)
 
     def get_text(self):
         output = StringIO()
@@ -74,7 +99,7 @@ class PdfConsoleInterface:
         converter = TextConverter(manager, output, laparams=LAParams())
         interpreter = PDFPageInterpreter(manager, converter)
 
-        for page in PDFPage.get_pages(self.file):
+        for page in self.pages:
             interpreter.process_page(page)
 
         converter.close()
@@ -89,7 +114,7 @@ class PdfConsoleInterface:
         converter = TextConverter(manager, output, laparams=LAParams())
         interpreter = PDFPageInterpreter(manager, converter)
         pages = []
-        for page in PDFPage.get_pages(self.file):
+        for page in self.pages:
             pages.append(page)
         interpreter.process_page(pages[-1])
         converter.close()
@@ -99,6 +124,9 @@ class PdfConsoleInterface:
 
     def get_year(self):
         self.year = max(map(lambda x: int(x), re.findall(self._get_literature_year_regex(), self.get_last_page_text())))
+
+    def get_chapter_deviation(self):
+        return self.number_of_chapters - self.PERFECT_COUNT_OF_CHAPTERS
 
 
     def get_number_of_literature(self):
@@ -129,7 +157,7 @@ class PdfConsoleInterface:
         return (self.number_of_pages, self.number_of_pictures, self.number_of_chapters, self.count_of_literature, self.year)
 
     def _get_charpter_regex(self):
-        return r'(ГЛАВА|Глава)'
+        return r'(ГЛАВА)'
 
     def _get_literature_regex(self):
         return r'((Литература|литературы|ЛИТЕРАТУРА|ЛИТЕРАТУРЫ)(\n|.)*)'
