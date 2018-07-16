@@ -31,6 +31,9 @@ class PdfConsoleInterface:
         self.document = None
         self.year = 0
         self.count_of_literature = 0
+        self.chapters_start_pages = []
+        self.amount_pages_in_chapters = []
+        self.percantage = []
         self.PERFECT_COUNT_OF_CHAPTERS = 5
 
     def load_file(self, path):
@@ -49,8 +52,7 @@ class PdfConsoleInterface:
             self.pages.append(page)
 
     def get_number_of_pages(self):
-        for i in self.pages:
-            self.number_of_pages += 1
+        self.number_of_pages = len(self.pages)
 
     def get_number_of_pictures(self):
         rsrcmgr = PDFResourceManager()
@@ -66,8 +68,11 @@ class PdfConsoleInterface:
                     i += 1
                     self.number_of_pictures += 1
 
+    def get_picture_per_page(self):
+        return self.number_of_pictures / self.number_of_pages
+
     def get_number_of_chapters(self):
-        chapters_start_pages = []
+        self.chapters_start_pages = []
         output = StringIO()
         manager = PDFResourceManager()
         converter = TextConverter(manager, output, laparams=LAParams())
@@ -81,10 +86,10 @@ class PdfConsoleInterface:
             if len(a) > 0:
                 for i in a:
                     #print("Текст страницы \n" + str(page_text) + "\n" + "Номер страницы: " + str(num))
-                    chapters_start_pages.append(num)
+                    self.chapters_start_pages.append(num)
             output.truncate(0)
-        chapters_start_pages = chapters_start_pages[(len(chapters_start_pages) // 2):]
-        self.number_of_chapters = len(chapters_start_pages)
+        self.chapters_start_pages = self.chapters_start_pages[(len(self.chapters_start_pages) // 2):]
+        self.number_of_chapters = len(self.chapters_start_pages)
         #print("тот самый принт: ")
         #print(chapters_start_pages)
 
@@ -108,6 +113,26 @@ class PdfConsoleInterface:
 
         return text
 
+    def get_count_of_symbols(self):
+        text = self.get_text()
+        syms = {}
+        for i in text:
+            if i in syms:
+                syms[i] += 1
+            else:
+                syms[i] = 1
+        return syms
+
+    def get_count_of_words(self):
+        text = self.get_text()
+        words = {}
+        for word in text.split():
+            if word in words:
+                words[word] += 1
+            else:
+                words[word] = 1
+        return words
+
     def get_last_page_text(self):
         output = StringIO()
         manager = PDFResourceManager()
@@ -128,12 +153,23 @@ class PdfConsoleInterface:
     def get_chapter_deviation(self):
         return self.number_of_chapters - self.PERFECT_COUNT_OF_CHAPTERS
 
-
     def get_number_of_literature(self):
         self.count_of_literature = len(list(filter(lambda x: len(x) > 0, re.findall(self._get_literature_count_regex(), self.get_last_page_text()))))
 
     def _check_opened_file(self):
         return self.file is not None
+
+    # [1, 4, 7, 15]
+    def get_chapters_pages_percentage(self):
+        self.amount_pages_in_chapters = []
+        for i in range(len(self.chapters_start_pages) - 1):
+            self.amount_pages_in_chapters.append(self.chapters_start_pages[i+1] - self.chapters_start_pages[i])
+        self.amount_pages_in_chapters.append(self.number_of_pages - self.chapters_start_pages[-1])
+        for el in self.amount_pages_in_chapters:
+            self.percantage.append(el / self.number_of_pages * 100)
+
+
+
 
     def _get_metrics(self):
         t1 = Process(target=self.get_number_of_chapters())
@@ -151,10 +187,11 @@ class PdfConsoleInterface:
         t3.join()
         t4.join()
         t5.join()
+        self.get_chapters_pages_percentage()
 
     def get_metrics(self):
         self._get_metrics()
-        return (self.number_of_pages, self.number_of_pictures, self.number_of_chapters, self.count_of_literature, self.year)
+        return (self.number_of_pages, self.number_of_pictures, self.number_of_chapters, self.count_of_literature, self.year, self.get_chapter_deviation(), self.get_picture_per_page(), self.get_count_of_symbols(), self.get_count_of_words(), self.amount_pages_in_chapters, self.percantage)
 
     def _get_charpter_regex(self):
         return r'(ГЛАВА)'
