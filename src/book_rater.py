@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import src.pdf_console_interface as pi
 import time
+import sys
 
 
 PAGES_OUTPUT_TEXT = "Страниц в документе: "
@@ -32,7 +35,8 @@ def print_metrics(pdf):
 def main():
     start = time.time()
     pdf = pi.PdfConsoleInterface()
-    pdf.load_file("/Users/vetas/FIRST_PROG_ALG.pdf")
+    file_name = sys.argv[1]
+    pdf.load_file(file_name)
     print_metrics(pdf)
     pdf.close_file()
     end = time.time()
